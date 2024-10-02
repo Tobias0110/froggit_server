@@ -1,0 +1,19 @@
+{
+  "name": "node-froggit-server",
+  "version": "0.1",
+  "description": "",
+  "type": "module",
+  "main": "froggit_server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Tobias, OE3TEC",
+  "license": "MIT",
+  "dependencies": {
+    "convert-units": "^2.3.4",
+    "dotenv": "^16.4.5",
+    "mqtt": "^5.10.1",
+    "mysql": "^2.18.1"
+  }
+}
