@@ -1,6 +1,7 @@
 # froggit_server
  Server to receive data from froggit weather stations. The data is optionally relaid via MQTT and can be saved to a MYSQL database. Multiple stations can be supported in parallel by one server.
 # Configuration
+Rename "EXAMPLE.env" to ".env" and enter settings that fit your system.
 
     DEBUG=false
     # Enable to convert data to usefull units
