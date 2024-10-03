@@ -19,3 +19,6 @@ Rename "EXAMPLE.env" to ".env" and enter settings that fit your system.
     MYSQL_PASSWORD=goodPassword
     # "STATION_KEY":"DATABASE.TABLE"
     MYSQL_DATABASE='{"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF":"wetterstation.breitenwaida"}'
+# Install
+
+    npm install 'https://github.com/Tobias0110/froggit_server.git'
