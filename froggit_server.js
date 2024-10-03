@@ -5,6 +5,27 @@ import mqtt from 'mqtt'
 import mysql from 'mysql'
 import convert from 'convert-units'
 
+function TD(r,T) {
+  let a, b;
+	if(T >= 0)
+	{
+		a = 7.5;
+		b = 237.3;
+	}
+	else
+	{
+		a = 7.6;
+		b = 240.7;
+	}
+
+	let sdd = 6.1078 * Math.exp(((a*T)/(b+T))/Math.LOG10E);
+  let dd = r/100 * sdd;
+  let c = Math.log(dd/6.1078) * Math.LOG10E;
+  let dewpoint = (b * c) / (a - c);
+
+  return dewpoint;
+}
+
 dotenv.config()
 
 let mysql_keys = JSON.parse(process.env.MYSQL_DATABASE);
@@ -90,6 +111,7 @@ const server = http.createServer((req, res) => {
         names_no_units.weeklyrain = Math.round(convert(parsed_data.weeklyrainin).from('in').to('mm')*100) / 100;
         names_no_units.monthlyrain = Math.round(convert(parsed_data.monthlyrainin).from('in').to('mm')*100) / 100;
         names_no_units.yearlyrain = Math.round(convert(parsed_data.yearlyrainin).from('in').to('mm')*100) / 100;
+        names_no_units.dewpoint = TD(names_no_units.humidity, names_no_units.temp);
         names_no_units.metric = 1;
       }
       else
@@ -108,6 +130,8 @@ const server = http.createServer((req, res) => {
         names_no_units.weeklyrain = parseFloat(parsed_data.weeklyrainin);
         names_no_units.monthlyrain = parseFloat(parsed_data.monthlyrainin);
         names_no_units.yearlyrain = parseFloat(parsed_data.yearlyrainin);
+        names_no_units.dewpoint = TD(names_no_units.humidity, convert(parsed_data.tempf).from('F').to('C'));
+        names_no_units.dewpoint = convert(names_no_units.dewpoint).from('C').to('F');
         names_no_units.metric = 0;
       }
       console.log('[Froggit] Data received with timestamp:', names_no_units.dateutc, 'KEY:', names_no_units.PASSKEY);
@@ -136,7 +160,8 @@ const server = http.createServer((req, res) => {
         sql_data.push(names_no_units.weeklyrain);
         sql_data.push(names_no_units.monthlyrain);
         sql_data.push(names_no_units.yearlyrain);
-        con.query('INSERT INTO ?? (timedate, humidityin, humidity, winddir, solarradiation, uv, tempin, baromrel, baromabs, temp, windspeed, windgust, maxdailygust, rainrate, eventrain, hourlyrain, dailyrain, weeklyrain, monthlyrain, yearlyrain) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);', sql_data, function (err, result){
+        sql_data.push(names_no_units.dewpoint);
+        con.query('INSERT INTO ?? (timedate, humidityin, humidity, winddir, solarradiation, uv, tempin, baromrel, baromabs, temp, windspeed, windgust, maxdailygust, rainrate, eventrain, hourlyrain, dailyrain, weeklyrain, monthlyrain, yearlyrain, dewpoint) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);', sql_data, function (err, result){
           if (err) throw err;
         console.log("[MYSQL] Record inserted into:", mysql_keys[names_no_units.PASSKEY], 'KEY:', names_no_units.PASSKEY);
       });
