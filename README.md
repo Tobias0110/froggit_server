@@ -22,3 +22,7 @@ Rename "EXAMPLE.env" to ".env" and enter settings that fit your system.
 # Install
 
     npm install 'https://github.com/Tobias0110/froggit_server.git'
+
+## Create the database table
+
+    CREATE TABLE breitenwaida (id BIGINT AUTO_INCREMENT PRIMARY KEY, timedate TIMESTAMP, humidityin int, humidity int, winddir int, solarradiation float, uv int, tempin float, baromrel float, baromabs float, temp float, windspeed float, windgust float, maxdailygust float, rainrate float, eventrain float, hourlyrain float, dailyrain float, weeklyrain float, monthlyrain float, yearlyrain float, dewpoint float);
