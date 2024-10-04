@@ -112,6 +112,7 @@ const server = http.createServer((req, res) => {
         names_no_units.monthlyrain = Math.round(convert(parsed_data.monthlyrainin).from('in').to('mm')*100) / 100;
         names_no_units.yearlyrain = Math.round(convert(parsed_data.yearlyrainin).from('in').to('mm')*100) / 100;
         names_no_units.dewpoint = TD(names_no_units.humidity, names_no_units.temp);
+        names_no_units.dewpoint = Math.round(TD(names_no_units.humidity, convert(parsed_data.tempf).from('F').to('C'))*10)/10;
         names_no_units.metric = 1;
       }
       else
@@ -131,7 +132,7 @@ const server = http.createServer((req, res) => {
         names_no_units.monthlyrain = parseFloat(parsed_data.monthlyrainin);
         names_no_units.yearlyrain = parseFloat(parsed_data.yearlyrainin);
         names_no_units.dewpoint = TD(names_no_units.humidity, convert(parsed_data.tempf).from('F').to('C'));
-        names_no_units.dewpoint = convert(names_no_units.dewpoint).from('C').to('F');
+        names_no_units.dewpoint = Math.round(convert(names_no_units.dewpoint).from('C').to('F')*10)/10;
         names_no_units.metric = 0;
       }
       console.log('[Froggit] Data received with timestamp:', names_no_units.dateutc, 'KEY:', names_no_units.PASSKEY);
