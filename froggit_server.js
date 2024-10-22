@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import mqtt from 'mqtt'
 import mysql from 'mysql'
 import convert from 'convert-units'
+import aprs from './aprs/aprs.js'
 
 function TD(r,T) {
   let a, b;
@@ -28,7 +29,25 @@ function TD(r,T) {
 
 dotenv.config()
 
-let mysql_keys = JSON.parse(process.env.MYSQL_DATABASE);
+let aprs_sent = 0;
+let aprs_counter = 0;
+let debug = false;
+if(process.env.DEBUG == 'true') debug = true;
+
+//let mysql_keys = JSON.parse(process.env.MYSQL_DATABASE);
+let stations = JSON.parse(process.env.STATIONS);
+// Add a passphrase to all stations that have a ham radio call
+for (const [station, settings] of Object.entries(stations)) {
+  if(Object.hasOwn(settings, 'call')) {
+    settings.pass = aprs.aprspass(settings.call);
+    settings.host = process.env.APRS_HOST;
+    settings.port = process.env.APRS_PORT;
+    if(process.env.TO_NON_RETARD == 'true') settings.metric = true;
+    else settings.metric = false;
+  }
+}
+
+if(debug) console.log(stations);
 
 let con = mysql.createConnection({
   host: process.env.MYSQL_HOST,
@@ -73,12 +92,24 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       res.end('Data received!');
       let parsed_data = querystring.parse(data);
-      if(process.env.DEBUG == 'true') console.log(parsed_data);
+      if(debug) console.log(parsed_data);
       //Check if received data contains a PASSKEY and if we know this key from our config
-      if((Object.hasOwn(parsed_data, 'PASSKEY')) && (Object.hasOwn(mysql_keys, parsed_data.PASSKEY) == false)) {
+      if((Object.hasOwn(parsed_data, 'PASSKEY')) && (Object.hasOwn(stations, parsed_data.PASSKEY) == false)) {
         console.log('[Froggit] Got data from unknown station with KEY:', parsed_data.PASSKEY);
       }
-      else if((Object.hasOwn(parsed_data, 'PASSKEY')) && (Object.hasOwn(mysql_keys, parsed_data.PASSKEY))) {
+      else if((Object.hasOwn(parsed_data, 'PASSKEY')) && (Object.hasOwn(stations, parsed_data.PASSKEY))) {
+      // dewpoint must be available for APRS
+      parsed_data.dewpointf = TD(parseInt(parsed_data.humidity), convert(parseFloat(parsed_data.tempf)).from('F').to('C'));
+      parsed_data.dewpointf = Math.round(convert(parsed_data.dewpointf).from('C').to('F')*10)/10;
+      // Send APRS if callsign is available every 10 minutes
+      if (Object.hasOwn(stations[parsed_data.PASSKEY], 'call') && (aprs_sent+10*60*1000 < Date.now())) {
+        aprs_sent = Date.now();
+        mqttClient.publish(process.env.MQTT_TOPIC + '/' + parsed_data.PASSKEY + '/aprs', JSON.stringify(aprs.send_aprs(parsed_data, stations[parsed_data.PASSKEY], aprs_counter, debug)));
+        if(aprs_counter = 999) aprs_counter = 0;
+        else aprs_counter = aprs_counter + 1;
+        console.log('[APRS] Sent data.');
+      }
+
       //Do this to remove units from variabls names (visible in MQTT JSON)
       let names_no_units = {};
       names_no_units.PASSKEY = parsed_data.PASSKEY;
@@ -111,7 +142,6 @@ const server = http.createServer((req, res) => {
         names_no_units.weeklyrain = Math.round(convert(parsed_data.weeklyrainin).from('in').to('mm')*100) / 100;
         names_no_units.monthlyrain = Math.round(convert(parsed_data.monthlyrainin).from('in').to('mm')*100) / 100;
         names_no_units.yearlyrain = Math.round(convert(parsed_data.yearlyrainin).from('in').to('mm')*100) / 100;
-        names_no_units.dewpoint = TD(names_no_units.humidity, names_no_units.temp);
         names_no_units.dewpoint = Math.round(TD(names_no_units.humidity, convert(parsed_data.tempf).from('F').to('C'))*10)/10;
         names_no_units.metric = 1;
       }
@@ -131,16 +161,15 @@ const server = http.createServer((req, res) => {
         names_no_units.weeklyrain = parseFloat(parsed_data.weeklyrainin);
         names_no_units.monthlyrain = parseFloat(parsed_data.monthlyrainin);
         names_no_units.yearlyrain = parseFloat(parsed_data.yearlyrainin);
-        names_no_units.dewpoint = TD(names_no_units.humidity, convert(parsed_data.tempf).from('F').to('C'));
-        names_no_units.dewpoint = Math.round(convert(names_no_units.dewpoint).from('C').to('F')*10)/10;
+        names_no_units.dewpoint = parsed_data.dewpointf;
         names_no_units.metric = 0;
       }
       console.log('[Froggit] Data received with timestamp:', names_no_units.dateutc, 'KEY:', names_no_units.PASSKEY);
-      if(process.env.DEBUG == 'true') console.log(names_no_units);
-      if(process.env.MQTT_ENABLE == 'true') mqttClient.publish(process.env.MQTT_TOPIC, JSON.stringify(names_no_units));
+      if(debug) console.log(names_no_units);
+      if(process.env.MQTT_ENABLE == 'true') mqttClient.publish(process.env.MQTT_TOPIC + '/' + parsed_data.PASSKEY + '/wx', JSON.stringify(names_no_units));
       if(process.env.MYSQL_ENABLE == 'true') {
         let sql_data = new Array();
-        sql_data.push(mysql_keys[names_no_units.PASSKEY]);
+        sql_data.push(stations[names_no_units.PASSKEY].mysql);
         sql_data.push(names_no_units.dateutc);
         sql_data.push(names_no_units.humidityin);
         sql_data.push(names_no_units.humidity);
@@ -164,7 +193,7 @@ const server = http.createServer((req, res) => {
         sql_data.push(names_no_units.dewpoint);
         con.query('INSERT INTO ?? (timedate, humidityin, humidity, winddir, solarradiation, uv, tempin, baromrel, baromabs, temp, windspeed, windgust, maxdailygust, rainrate, eventrain, hourlyrain, dailyrain, weeklyrain, monthlyrain, yearlyrain, dewpoint) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);', sql_data, function (err, result){
           if (err) throw err;
-        console.log("[MYSQL] Record inserted into:", mysql_keys[names_no_units.PASSKEY], 'KEY:', names_no_units.PASSKEY);
+        console.log("[MYSQL] Record inserted into:", stations[names_no_units.PASSKEY].mysql, 'KEY:', names_no_units.PASSKEY);
       });
       }
       else console.log('[Froggit] Got data with unsupported fromat.');
