@@ -26,3 +26,7 @@ Rename "EXAMPLE.env" to ".env" and enter settings that fit your system.
 ## Create the database table
 
     CREATE TABLE breitenwaida (id BIGINT AUTO_INCREMENT PRIMARY KEY, timedate TIMESTAMP, humidityin int, humidity int, winddir int, solarradiation float, uv int, tempin float, baromrel float, baromabs float, temp float, windspeed float, windgust float, maxdailygust float, rainrate float, eventrain float, hourlyrain float, dailyrain float, weeklyrain float, monthlyrain float, yearlyrain float, dewpoint float);
+
+## On the weather station
+
+Set the IP address and port of the server. The path doesn't matter.
