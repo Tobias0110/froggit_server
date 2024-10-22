@@ -4,37 +4,6 @@ import convert from 'convert-units';
 //https://apps.magicbug.co.uk/passcode/
 //https://om1amj.sk/index.php/conversion-of-gps-coordinates-to-aprs-format
 
-/*let set = {};
-set.host = 'euro.aprs2.net';
-set.port = 14580;
-set.call = 'OE3TEC';
-set.ssid = '13';
-set.pass = '';
-set.lat = '4830.60N';
-set.lon = '01604.02E';
-set.comment = 'TEST!';
-set.metric = true;
-
-let names_no_units = {};
-names_no_units.humidity = 87; //rohdaten von station nehmen
-names_no_units.winddir = 123; //rohdaten von station nehmen
-names_no_units.solarradiation = 890.5; //rohdaten von station nehmen
-names_no_units.uv = 5;
-names_no_units.baromrelin = 30.268;
-names_no_units.tempf = -0.7; //rohdaten von station nehmen
-names_no_units.windspeedmph = 20.86; //rohdaten von station nehmen 8.94
-names_no_units.windgustmph = 25.78;  //rohdaten von station nehmen 11.17
-names_no_units.rainratein = 0.56;
-names_no_units.hourlyrainin = 1.96; //rohdaten von station nehmen
-names_no_units.dailyrainin = 2.54; //rohdaten von station nehmen
-names_no_units.weeklyrainin = 5.0;
-names_no_units.monthlyrainin = 10.87;
-names_no_units.yearlyrainin = 30.65;
-names_no_units.dewpointf = 6.8;
-names_no_units.dateutc = '2024-10-13 23:07:02';
-names_no_units.wh65batt = 0;
-*/
-
 function aprspass (callsign) {
     let hash = 0x73E2;
     let l = callsign.length;
@@ -151,6 +120,3 @@ return mqtt;
 }
 
 export default {send_aprs, aprspass};
-
-//set.pass = aprspass(set.call);
-//console.log(send_aprs(names_no_units, set, 12, true));
