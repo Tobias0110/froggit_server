@@ -29,24 +29,26 @@ function TD(r,T) {
 
 dotenv.config()
 
-let aprs_sent = 0;
-let aprs_counter = 0;
 let debug = false;
 if(process.env.DEBUG == 'true') debug = true;
 
-//let mysql_keys = JSON.parse(process.env.MYSQL_DATABASE);
 let stations = JSON.parse(process.env.STATIONS);
-// Add a passphrase to all stations that have a ham radio call
+// Add a APRS passphrase to all stations that have a ham radio call
 for (const [station, settings] of Object.entries(stations)) {
   if(Object.hasOwn(settings, 'call')) {
     settings.pass = aprs.aprspass(settings.call);
     settings.host = process.env.APRS_HOST;
     settings.port = process.env.APRS_PORT;
+    // Package timer per station
+    settings.aprs_sent = 0;
+    // Package counter per station
+    settings.aprs_counter = 0;
     if(process.env.TO_NON_RETARD == 'true') settings.metric = true;
     else settings.metric = false;
   }
 }
 
+// Show complete settings of all stations
 if(debug) console.log(stations);
 
 let con = mysql.createConnection({
@@ -101,12 +103,14 @@ const server = http.createServer((req, res) => {
       // dewpoint must be available for APRS
       parsed_data.dewpointf = TD(parseInt(parsed_data.humidity), convert(parseFloat(parsed_data.tempf)).from('F').to('C'));
       parsed_data.dewpointf = Math.round(convert(parsed_data.dewpointf).from('C').to('F')*10)/10;
+
       // Send APRS if callsign is available every 10 minutes
-      if (Object.hasOwn(stations[parsed_data.PASSKEY], 'call') && (aprs_sent+10*60*1000 < Date.now())) {
-        aprs_sent = Date.now();
-        mqttClient.publish(process.env.MQTT_TOPIC + '/' + parsed_data.PASSKEY + '/aprs', JSON.stringify(aprs.send_aprs(parsed_data, stations[parsed_data.PASSKEY], aprs_counter, debug)));
-        if(aprs_counter = 999) aprs_counter = 0;
-        else aprs_counter = aprs_counter + 1;
+      if (Object.hasOwn(stations[parsed_data.PASSKEY], 'call') && (stations[parsed_data.PASSKEY].aprs_sent+10*60*1000 < Date.now())) {
+        stations[parsed_data.PASSKEY].aprs_sent = Date.now();
+        mqttClient.publish(process.env.MQTT_TOPIC + '/' + parsed_data.PASSKEY + '/aprs', JSON.stringify(aprs.send_aprs(parsed_data, stations[parsed_data.PASSKEY], stations[parsed_data.PASSKEY].aprs_counter, debug)));
+        // Wrap around for package counter
+        if(stations[parsed_data.PASSKEY].aprs_counter == 999) stations[parsed_data.PASSKEY].aprs_counter = 0;
+        else stations[parsed_data.PASSKEY].aprs_counter = stations[parsed_data.PASSKEY].aprs_counter + 1;
         console.log('[APRS] Sent data.');
       }
 
