@@ -17,8 +17,12 @@ Rename "EXAMPLE.env" to ".env" and enter settings that fit your system.
     MYSQL_HOST=localhost
     MYSQL_USER=niceUser
     MYSQL_PASSWORD=goodPassword
-    # "STATION_KEY":"DATABASE.TABLE"
-    MYSQL_DATABASE='{"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF":"wetterstation.breitenwaida"}'
+    APRS_HOST=euro.aprs2.net
+    APRS_PORT=14580
+    # "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" is an example for a froggit station key
+    # if you don't want aprs: don't input a callsign
+    STATIONS='{"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF":{"mysql":"wetterstation.breitenwaida","call":"N0CALL","ssid":10,"lat":"4780.60N","lon":"01604.02E","comment":"on my shed"}, "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE":{"mysql":"wetterstation.hollabrunn"}}'
+
 # Install
 
     npm install 'https://github.com/Tobias0110/froggit_server.git'
