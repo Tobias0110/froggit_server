@@ -1,0 +1,14 @@
+[Unit]
+Description=Froggit Server
+After=network.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+User=froggit_user
+WorkingDirectory=/home/froggit_user/froggit
+ExecStart=/home/froggit_user/froggit/start.sh
+
+[Install]
+WantedBy=multi-user.target
