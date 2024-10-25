@@ -1,6 +1,6 @@
 {
   "name": "node-froggit-server",
-  "version": "0.5",
+  "version": "0.6",
   "description": "",
   "type": "module",
   "main": "froggit_server.js",
