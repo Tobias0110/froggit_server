@@ -32,6 +32,7 @@ dotenv.config()
 
 let debug = false;
 if(process.env.DEBUG == 'true') debug = true;
+let needed_values = ['PASSKEY','stationtype','runtime','heap','wh65batt','freq','model','interval','dateutc','humidityin','humidity','winddir','solarradiation','uv','tempinf','baromrelin','baromabsin','tempf','windspeedmph','windgustmph','maxdailygust','rainratein','eventrainin','hourlyrainin','dailyrainin','weeklyrainin','monthlyrainin','yearlyrainin'];
 
 let stations = JSON.parse(process.env.STATIONS);
 // Add a APRS passphrase to all stations that have a ham radio call
@@ -105,8 +106,8 @@ const server = http.createServer((req, res) => {
       if((Object.hasOwn(parsed_data, 'PASSKEY')) && (Object.hasOwn(stations, parsed_data.PASSKEY) == false)) {
         console.log('[Froggit] Got data from unknown station with KEY:', parsed_data.PASSKEY);
       }
-      else if((Object.hasOwn(parsed_data, 'PASSKEY')) && (Object.hasOwn(stations, parsed_data.PASSKEY))) {
-        console.log('[Froggit] Data received with timestamp:', parsed_data.dateutc, 'KEY:', parsed_data.dateutc.PASSKEY);
+      else if((needed_values.every(needed_values => Object.hasOwn(parsed_data, needed_values))) && (Object.hasOwn(stations, parsed_data.PASSKEY))) {
+        console.log('[Froggit] Data received with timestamp:', parsed_data.dateutc, 'KEY:', parsed_data.PASSKEY);
 
         // dewpoint must be available for APRS
         parsed_data.dewpointf = TD(parseInt(parsed_data.humidity), convert(parseFloat(parsed_data.tempf)).from('F').to('C'));
